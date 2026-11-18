@@ -29,3 +29,18 @@ Changes: 121 files changed, 19299 insertions(+), 74 deletions(-)
 > - Dockerfiles, docker-compose, env examples, README and docs
 >   (architecture, API, RAG design, ADR-0003).
 > - Tests: backend unit + e2e with fake AI providers, frontend components.
+
+## 2026-11-18 15:25 — `4af01b7` (main)
+
+**feat: focused citation snippets, UI docs with screenshots**  
+Author: Geno Shishkov  
+Changes: 16 files changed, 360 insertions(+), 27 deletions(-)
+
+> - Citation snippets are plain text (Markdown stripped, wrapped prose
+>   re-joined) and centred on the sentence that best matches the answer
+>   text carrying that citation, so the cited fact is visible.
+> - README: "User interface" section with desktop and mobile screenshots.
+> - Map OpenAI insufficient_quota / credit_balance_exhausted to a clear
+>   "quota exhausted" message, distinct from rate limiting.
+> - docker-compose: drop top-level `name:` (unsupported by Compose 2.0 beta).
+> - docs/rag-design.md: snippet selection and its limitations.
