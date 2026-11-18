@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Append every commit to history/COMMITS.md
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+file="$root/history/COMMITS.md"
+mkdir -p "$(dirname "$file")"
+[ -f "$file" ] || printf '# Commit history\n\n<!-- Appended automatically by .githooks/post-commit. Do not edit by hand. -->\n' > "$file"
+
+hash="$(git rev-parse --short HEAD)"
+# Skip if already recorded (e.g. hook re-run)
+grep -q "\`$hash\`" "$file" && exit 0
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+date="$(git log -1 --format=%ad --date=format:'%Y-%m-%d %H:%M')"
+author="$(git log -1 --format=%an)"
+subject="$(git log -1 --format=%s)"
+body="$(git log -1 --format=%b | grep -v -i '^co-authored-by:' | sed '/^[[:space:]]*$/d' || true)"
+stats="$(git show --stat --format= HEAD | tail -n 1 | sed 's/^ *//')"
+
+{
+  printf '\n## %s — `%s` (%s)\n\n' "$date" "$hash" "$branch"
+  printf '**%s**  \n' "$subject"
+  printf 'Author: %s  \n' "$author"
+  printf 'Changes: %s\n' "${stats:-no file changes}"
+  if [ -n "$body" ]; then
+    printf '\n'
+    printf '%s\n' "$body" | sed 's/^/> /'
+  fi
+} >> "$file"
