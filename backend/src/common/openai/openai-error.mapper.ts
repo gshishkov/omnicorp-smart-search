@@ -24,8 +24,13 @@ export function mapOpenAiError(err: unknown, operation: string): HttpException {
         'AI provider rejected the backend credentials. Check OPENAI_API_KEY in the backend configuration.',
       );
     }
+    if (err.status === 429 && isQuotaError(err)) {
+      return new ServiceUnavailableException(
+        'AI provider quota exhausted for the configured API key. Check the OpenAI account billing and usage limits.',
+      );
+    }
     if (err.status === 429) {
-      return new ServiceUnavailableException('AI provider rate limit or quota reached. Please try again shortly.');
+      return new ServiceUnavailableException('AI provider rate limit reached. Please try again shortly.');
     }
     if (err.status === 404) {
       return new BadGatewayException('Configured AI model was not found. Check the model names in the backend configuration.');
@@ -33,4 +38,10 @@ export function mapOpenAiError(err: unknown, operation: string): HttpException {
     return new BadGatewayException(`AI provider error during ${operation}.`);
   }
   return new BadGatewayException(`Unexpected error during ${operation}.`);
+}
+
+const QUOTA_CODES = new Set(['insufficient_quota', 'credit_balance_exhausted', 'billing_hard_limit_reached']);
+
+function isQuotaError(err: InstanceType<typeof OpenAI.APIError>): boolean {
+  return err.type === 'insufficient_quota' || QUOTA_CODES.has(String(err.code));
 }

@@ -19,6 +19,44 @@ guessing.
 - Security: DTO validation, rate limiting, helmet, CORS, uniform error responses, and the API key stays in the backend.
 - Automated tests: backend unit + e2e (no network, fake AI providers) and frontend component tests.
 
+## User interface
+
+The web app is a single chat screen with the OmniCorp logo at the top and the knowledge base beside it. It is
+built with React and TailwindCSS and adapts from phones (360 px) to wide desktops.
+
+![Chat answer with numbered citations and the knowledge-base sidebar](docs/screenshots/desktop-answer-with-citations.jpg)
+
+**Chat**
+
+- **Welcome screen:** a short explanation and four example questions. Clicking one sends it.
+- **Answers:** each sentence that uses the documentation ends with a numbered marker such as `[1]`. Clicking the
+  marker jumps to the matching source card.
+- **Sources:** one card per cited chunk, showing the document title, the chunk id (e.g. `sso-setup-guide#5`) and
+  a plain-text snippet centred on the passage the answer relied on. **Show more** expands the snippet.
+- **Refusals:** when the documentation doesn't cover a question, the reply appears in an amber
+  *Not found in documentation* bubble with no sources, so it can't be mistaken for an answer.
+- **Errors:** server or network problems (for example, the knowledge base still loading) appear in a red
+  *Request failed* bubble with the server's message.
+- **Input:** Enter sends and Shift+Enter adds a new line. Questions need 3–1000 characters, and a counter shows
+  the length. The input is disabled and a "Searching the documentation…" indicator shows while a request runs.
+  **Clear conversation** resets the chat.
+
+**Knowledge base panel**
+
+- Lists every loaded document with its title, source id, chunk count and size.
+- **Reload** re-reads `source/`, re-embeds everything and shows the result (documents, chunks, duration, and any
+  per-file errors).
+- On desktop (≥1024 px) it's a fixed sidebar. On smaller screens the **Documents** button in the header opens it as
+  a drawer.
+
+| Welcome | Refusal |
+| --- | --- |
+| ![Welcome screen with example questions](docs/screenshots/desktop-welcome.jpg) | ![Out-of-scope question refused](docs/screenshots/desktop-refusal.jpg) |
+
+| Mobile chat | Mobile knowledge-base drawer |
+| --- | --- |
+| <img src="docs/screenshots/mobile-answer.jpg" alt="Mobile chat with an answer and citation" width="300"> | <img src="docs/screenshots/mobile-documents.jpg" alt="Mobile documents drawer after a reload" width="300"> |
+
 ## Architecture at a glance
 
 ```

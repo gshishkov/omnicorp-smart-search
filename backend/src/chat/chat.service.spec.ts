@@ -5,7 +5,7 @@ import { AppConfigService } from '../config/app-config.service';
 import { Env } from '../config/env.validation';
 import { Chunk } from '../documents/documents.types';
 import { InMemoryVectorStore } from '../vector-store/in-memory-vector-store';
-import { ChatService, REFUSAL_MESSAGE, toSnippet } from './chat.service';
+import { ChatService, REFUSAL_MESSAGE } from './chat.service';
 import { CitationValidator } from './citation-validator';
 
 const config = (overrides: Partial<Env> = {}) =>
@@ -92,14 +92,5 @@ describe('ChatService', () => {
       new CitationValidator(),
     );
     await expect(service.ask('anything here?')).rejects.toBeInstanceOf(ServiceUnavailableException);
-  });
-});
-
-describe('toSnippet', () => {
-  it('collapses whitespace and truncates at a word boundary', () => {
-    expect(toSnippet('a  b\n c')).toBe('a b c');
-    const s = toSnippet('word '.repeat(100), 50);
-    expect(s.endsWith('…')).toBe(true);
-    expect(s.length).toBeLessThanOrEqual(51);
   });
 });

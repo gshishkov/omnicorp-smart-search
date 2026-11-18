@@ -56,6 +56,18 @@ If the output is invalid JSON it is retried once, then the request fails with `5
 
 Citations in the response (`documentTitle`, `textSnippet`) are built from the vector store entries, never copied from model text.
 
+### Snippet selection
+
+`textSnippet` (at most 300 characters) is cut from the stored chunk text (`backend/src/chat/snippet.ts`):
+
+1. Hard-wrapped prose is re-joined, Markdown is stripped (bold, links, list markers, table pipes) and headings are dropped.
+2. Each sentence is scored by how densely it shares terms with the answer sentences carrying that citation's marker,
+   plus the question. Shared numbers count double, and the score is divided by √(sentence terms).
+3. The window starts at the best sentence and grows one sentence at a time toward the better-matching neighbour.
+   Omitted text is marked with `…`.
+
+The model output only decides *which part* of the stored text is shown. The snippet text itself always comes from the document.
+
 ## 6. Refusal
 
 A refusal returns `refused: true`, no citations, and a fixed message. The UI shows it with a distinct
@@ -74,3 +86,4 @@ A refusal returns `refused: true`, no citations, and a fixed message. The UI sho
 - Similarity thresholds depend on the embedding model. Re-tune `MIN_SIMILARITY` if you change it.
 - No reranker and no hybrid keyword search yet. Exact codes or names may retrieve less reliably than prose.
 - The model could still misstate a fact from a cited chunk. Citations let the CSM verify it in one click.
+- Snippets cut from a Markdown table don't repeat the table header row, so column meaning can be lost in the snippet. The full chunk is still correct.

@@ -6,21 +6,12 @@ import { LlmProvider } from '../llm/llm-provider';
 import { VectorStore } from '../vector-store/vector-store';
 import { CitationValidator } from './citation-validator';
 import { ChatResponseDto, CitationDto } from './dto/chat-response.dto';
+import { buildSnippet, citedSentences } from './snippet';
 
 export const REFUSAL_MESSAGE =
   "I couldn't find an answer to that in the OmniCorp documentation. Try rephrasing your question, or contact the documentation owner if the topic should be covered.";
 
-const SNIPPET_LENGTH = 300;
-
 export type RefusalReason = 'no_relevant_chunks' | 'model_not_answerable' | 'no_valid_citations';
-
-export function toSnippet(text: string, max = SNIPPET_LENGTH): string {
-  const flat = text.replace(/\s+/g, ' ').trim();
-  if (flat.length <= max) return flat;
-  const cut = flat.slice(0, max);
-  const lastSpace = cut.lastIndexOf(' ');
-  return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trim()}…`;
-}
 
 @Injectable()
 export class ChatService {
@@ -62,16 +53,20 @@ export class ChatService {
     }
     if (!validChunks.length || !answer) return this.refuse('no_valid_citations');
 
-    return { answer, refused: false, citations: validChunks.map((c) => this.toCitation(c)) };
+    return {
+      answer,
+      refused: false,
+      citations: validChunks.map((c) => this.toCitation(c, `${citedSentences(answer, c.chunkId)} ${question}`)),
+    };
   }
 
-  private toCitation(chunk: Chunk): CitationDto {
-    // Built from the store, never from model output.
+  private toCitation(chunk: Chunk, focus: string): CitationDto {
+    // Built from the store, never from model output; the focus only chooses which part of the chunk to show.
     return {
       sourceId: chunk.sourceId,
       documentTitle: chunk.documentTitle,
       chunkId: chunk.chunkId,
-      textSnippet: toSnippet(chunk.text),
+      textSnippet: buildSnippet(chunk.text, focus),
     };
   }
 

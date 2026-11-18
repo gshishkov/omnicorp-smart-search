@@ -1,5 +1,3 @@
-name: omnicorp-smartsearch
-
 services:
   backend:
     build:
