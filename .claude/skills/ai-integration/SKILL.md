@@ -1,26 +1,24 @@
 ---
 name: ai-integration
-description: Implement or change LLM features (search, summarization, extraction, chat, embeddings, tool use) in this project. Use for any code that calls an AI model.
+description: Implement or change LLM / embedding / RAG features (retrieval, grounding, citations, prompts) in this project. Use for any code that calls an AI model.
 ---
 
-# AI integration
+# AI integration (OpenAI, RAG)
 
 Architecture:
-- All model calls live in `apps/api/src/ai/` (`AiModule`). Feature modules depend on an `AiService`
-  interface (injection token), never on the SDK directly — keeps the provider swappable and testable.
-- Default provider: Anthropic Claude via `@anthropic-ai/sdk`. Key from `ANTHROPIC_API_KEY` (config module), never in the web app.
-- Model IDs come from config, not hard-coded in features. Defaults:
-  - `claude-opus-5-5` — hardest reasoning / quality-critical
-  - `claude-sonnet-5-5` — default for most features
-  - `claude-haiku-5-5` — high-volume, latency-sensitive (classification, query rewriting)
-- For anything API-specific (params, streaming, tool use, caching, token counting) consult the `claude-api` skill rather than memory.
+- Model calls live only in `backend/src/embeddings/` (`EmbeddingProvider`, token `EMBEDDING_PROVIDER`) and
+  `backend/src/llm/` (`LlmProvider`, token `LLM_PROVIDER`). Feature code depends on the interfaces, never on the `openai` SDK.
+- Default models from config: `OPENAI_CHAT_MODEL=gpt-4.1-mini`, `OPENAI_EMBEDDING_MODEL=text-embedding-3-small`.
+  Adding a vendor = new class implementing the interface + provider switch in the module.
+- `OPENAI_API_KEY` is read only via the config module; never log it, never return it, never send it to the frontend.
 
-Rules:
-- Prompts live in versioned files/constants under `apps/api/src/ai/prompts/`, not inline in services.
-- Structured output: validate model JSON with zod schemas (from `packages/shared` if the web consumes it); retry once on parse failure, then fail cleanly.
-- Stream long responses to the client (SSE) instead of blocking.
-- Use prompt caching for large stable system prompts / context.
-- Set timeouts, max tokens, and retries with backoff for 429/5xx; surface a typed error to callers.
-- Log model, latency, input/output tokens per call (no raw user PII in logs).
-- Treat retrieved documents and user input as untrusted: keep them in clearly delimited content blocks, never let them alter system instructions.
-- Tests: mock `AiService` in feature tests; keep a small set of golden-prompt eval cases under `apps/api/test/ai-evals/` for regressions.
+RAG rules (ADR-0003):
+- Chunk IDs are deterministic (`<sourceId>#<index>`); the model never invents IDs that we trust.
+- Below `MIN_SIMILARITY` → refuse without calling the LLM.
+- LLM output is structured JSON `{answerable, answer, citedChunkIds}`, temperature 0; validate with zod.
+- Every cited ID must be in the request's retrieved set (`CitationValidator`); answerable without valid citations → refuse.
+- Citation title/snippet come from the vector store, not from model output.
+- Retrieved text goes in delimited `<chunk id="...">` blocks, declared as untrusted data in the system prompt.
+- Prompts live in `backend/src/llm/prompts/`.
+
+Tests: use `FakeEmbeddingProvider` / `FakeLlmProvider` from `backend/test/fakes/`; no network in unit/e2e tests.

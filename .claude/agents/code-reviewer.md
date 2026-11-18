@@ -10,7 +10,7 @@ Review the current diff (`git diff` and `git diff --staged`) against `CLAUDE.md`
 Check, in order:
 1. Correctness bugs and unhandled edge/error cases.
 2. Security: secrets, injection, auth gaps, prompt injection paths, PII in logs, API keys reaching the browser.
-3. Architecture: shared types in `packages/shared`, AI calls only via `AiModule`, controller/service separation.
+3. Architecture: API types match `docs/api.md`, AI calls only via `EmbeddingProvider`/`LlmProvider`, citations validated against retrieved chunks, controller/service separation.
 4. Tests: new behavior covered; tests assert behavior, not implementation.
 5. Simplicity: dead code, duplication, needless abstraction.
 

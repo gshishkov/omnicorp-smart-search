@@ -1,7 +1,5 @@
 # OmniCorp SmartSearch
 
-> Project scope will be defined in the next prompt. This file sets the working rules and
-> architecture baseline; update the **Product** section once scope is known.
 
 ## Role
 
@@ -11,37 +9,47 @@ call out trade-offs, risks and open questions instead of silently picking.
 
 ## Product
 
-_TBD — to be filled from the project description._
+RAG chatbot for OmniCorp Customer Success Managers. It answers questions **strictly** from internal
+knowledge-base articles (`source/*.md`), always shows validated citations, and refuses when the docs
+don't contain the answer. Plan: `history/plans/2026-11-18-rag-chatbot-mvp.md`. Design: ADR-0003, `docs/rag-design.md`.
 
-## Tech stack (baseline)
+## Tech stack
 
-| Layer        | Choice                                                         |
-| ------------ | -------------------------------------------------------------- |
-| Language     | TypeScript (strict) everywhere                                 |
-| Backend      | NestJS (REST, modules per feature, DTO validation)             |
-| Frontend     | React + Vite, TanStack Query for server state                  |
-| AI           | Anthropic Claude via `@anthropic-ai/sdk`, behind an `AiModule` |
-| Monorepo     | pnpm workspaces (`apps/*`, `packages/*`) — see ADR-0002        |
-| Runtime      | Node.js 22 LTS (`.nvmrc`)                                      |
-| Tests        | Jest (API), Vitest + Testing Library (Web)                     |
-| Lint/format  | ESLint + Prettier                                              |
+| Layer       | Choice                                                                |
+| ----------- | --------------------------------------------------------------------- |
+| Language    | TypeScript (strict) everywhere                                        |
+| Backend     | NestJS REST API, modules per feature, class-validator DTOs            |
+| Frontend    | React + Vite, function components + hooks, TailwindCSS, TanStack Query |
+| AI          | OpenAI (`gpt-4.1-mini`, `text-embedding-3-small`) behind provider interfaces |
+| Storage     | In-memory vector store (MVP)                                          |
+| Runtime     | Node.js 22 (`.nvmrc`), Docker Compose for local runs                  |
+| Tests       | Jest + supertest (backend), Vitest + Testing Library (frontend)       |
 
-Planned layout (create when scaffolding):
+Layout (ADR-0002):
 
 ```
-apps/api        NestJS service
-apps/web        React SPA
-packages/shared Shared types, DTO contracts, zod schemas
-docs/adr        Architecture Decision Records
-history/        Prompt + commit history (see below)
+backend/   NestJS API         (npm package, Dockerfile, .env.example)
+frontend/  React SPA          (npm package, Dockerfile, nginx.conf)
+source/    Knowledge base .md articles (mounted read-only into backend)
+docs/      architecture.md, api.md, rag-design.md, adr/
+history/   Prompt, plan and commit history
 ```
+
+## Commands
+
+```bash
+docker compose up --build                         # run the app on http://localhost:8080
+cd backend && npm test && npm run test:e2e        # backend tests
+cd frontend && npm test                           # frontend tests
+```
+Local Node is v16 on this machine; use Node 22 (nvm) or run tests in Docker (see README).
 
 ## Conventions
 
 - TypeScript `strict: true`; no `any` without a comment explaining why.
-- Shared request/response contracts live in `packages/shared`; never duplicate types across apps.
+- API contract: `docs/api.md` is the source of truth; keep `frontend/src/types/api.ts` and backend DTOs in sync with it.
 - Secrets only via env vars; commit an `.env.example`, never `.env`.
-- AI calls go only through the API's `AiModule` — the browser never holds a model API key.
+- AI calls go only through the backend `embeddings/` and `llm/` provider interfaces — the browser never holds a model API key.
 - Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`.
 - Every feature ships with tests; run lint + typecheck + tests before declaring done.
 

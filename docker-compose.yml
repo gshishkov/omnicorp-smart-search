@@ -1,0 +1,29 @@
+name: omnicorp-smartsearch
+
+services:
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+    env_file: ./backend/.env
+    environment:
+      PORT: "3000"
+      SOURCE_DIR: /app/source
+    volumes:
+      # Knowledge base articles; edit files then POST /api/documents/reload.
+      - ./source:/app/source:ro
+    ports:
+      # Optional direct access for curl / Swagger (http://localhost:3000/api/docs).
+      - "${BACKEND_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      target: runtime
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
